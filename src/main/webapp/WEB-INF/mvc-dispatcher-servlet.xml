@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="
+http://www.springframework.org/schema/beans
+http://www.springframework.org/schema/beans/spring-beans.xsd
+http://www.springframework.org/schema/context
+http://www.springframework.org/schema/context/spring-context.xsd
+http://www.springframework.org/schema/mvc
+http://www.springframework.org/schema/mvc/spring-mvc.xsd
+http://www.springframework.org/schema/tx
+http://www.springframework.org/schema/tx/spring-tx.xsd
+http://www.springframework.org/schema/security
+http://www.springframework.org/schema/security/spring-security-4.2.xsd"
+>
+    <!-- twoja paczka z beanmi -->
+    <context:component-scan base-package="ovh.devnote.ksiegarnia"/>
+    <!-- adnotacje -->
+    <security:global-method-security pre-post-annotations="enabled"/>
+    <mvc:annotation-driven/>
+    <!-- MVC view resolver -->
+    <bean
+            class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/view/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+    <!-- zrodlo i polaczenie z baza stosujemy c3p0 →
+   Pula polaczen — otwiera i przechowuje polaczenia. Nie ma potrzeby tworzenia nowego polaczenia
+   za każdym razem, co poprawia wydajność całego systemu.-->
+    <bean id="myDataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+          destroy-method="close">
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="jdbcUrl" value="jdbc:mysql://localhost/hibernatedemo?createDatabaseIfNotExist=TRUE&amp;useUnicode=yes&amp;characterEncoding=UTF-8&amp;serverTimezone=Europe/Warsaw"/>
+        <property name="user" value="jpa2020"/>
+        <property name="password" value="jpa2020"/>
+        <!-- these are connection pool properties for C3P0 -->
+        <property name="minPoolSize" value="2"/>
+        <property name="maxPoolSize" value="10"/>
+        <property name="maxIdleTime" value="20000"/>
+    </bean>
+    <!-- Hibernate session factory //+znane nam wstrzykiwanie zaleznosci w beanow -->
+    <bean id="sessionFactory"
+          class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <property name="dataSource" ref="myDataSource"/>
+        <property name="packagesToScan" value="ovh.devnote.ksiegarnia.entity"/>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+                <prop key="hibernate.show_sql">true</prop>
+            </props>
+        </property>
+    </bean>
+    <!--Hibernate transaction manager -->
+    <bean id="myTransactionManager"
+          class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+    <!-- Pozwala na automatyczna obsluge transkacji bez pisania dodatkowego kodu -->
+    <tx:annotation-driven transaction-manager="myTransactionManager"/>
+    <!-- katalog z zasobami strony, zdjecia, skrypty, style -->
+    <mvc:resources location="/resources/" mapping="/resources/**"></mvc:resources>
+</beans>
